@@ -56,8 +56,10 @@ TODO:
 - GT
   - gru_gt_v1.py: GT matrix and original feature matrix concatenate directly and put into GRU
   - gru_gt_v2.py: GT matrix and original feature matrix go through fully connected layers respectively, and concatenate together
+  - gru_gt_v21.py: Original feature matrix goes through FC and GRU, while GT matrix goes through FC layers, then concatenate together
   - gru_gt_v3.py: GT matrix goes through fully connected layers, then multiply with weight and add with weighted original feature matrix
+  - gru_gt_v31.py: Original feature matrix goes through FC and GRU, while GT matrix goes through FC layers, then multiply with different weights and add together
 - Model Structure
-  - models.py: some changes to the structure by introdcing attention layer and CNN1D
+  - models.py: some changes to the structure by introdcing CNN1D layers (Attention layer would highly lower the performance)
   - attention_origin_trends,py: original combination of GT and features with changed structure
   - attention_with_trends.py: combine changed model structure with changed combination of GT and original feature
