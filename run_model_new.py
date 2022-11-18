@@ -14,6 +14,8 @@ from lstm_with_trends import lstm_with_trends
 from gru_gt_v1 import gru_with_trends1
 from gru_gt_v2 import gru_with_trends2
 from gru_gt_v3 import gru_with_trends3
+from gru_gt_v21 import gru_with_trends21
+from gru_gt_v31 import gru_with_trends31
 from attention_with_trends import att_with_trends
 from attention_origin_trends import attn_with_trends_v0
 import matplotlib.pyplot as plt
@@ -30,7 +32,9 @@ model_lookup = {
     'nowcasting_lstm': lstm_with_trends,
     "nowcasting_gru_v1": gru_with_trends1,
     "nowcasting_gru_v2": gru_with_trends2,
+    "nowcasting_gru_v21": gru_with_trends21,
     "nowcasting_gru_v3": gru_with_trends3,
+    "nowcasting_gru_v31": gru_with_trends31,
     "nowcasting_attn": att_with_trends,
     "nowcasting_attn_origin": attn_with_trends_v0
 }
@@ -54,6 +58,10 @@ model = model_lookup[model_name]
 n_test = int(sys.argv[1])
 
 def plot_lines():
+    model7 = model_lookup["nowcasting_gru_v21"]
+    _, _, history7 = model7(df, df_trends, th, n_test, True)
+    model8 = model_lookup["nowcasting_gru_v31"]
+    _, _, history8 = model8(df, df_trends, th, n_test, True)
     model3 = model_lookup["nowcasting_gru_v2"]
     _, _, history3 = model3(df, df_trends, th, n_test, True)
     model4 = model_lookup["nowcasting_gru_v3"]
@@ -74,6 +82,8 @@ def plot_lines():
     plt.plot(epochs,gaussian_filter1d(history4.history['loss'], sigma=3),'green',label='GRU + Optimized GT (v3)')
     plt.plot(epochs,gaussian_filter1d(history6.history['loss'], sigma=3),'purple',label='Optimized Model + GT')
     plt.plot(epochs,gaussian_filter1d(history5.history['loss'], sigma=3),'orange',label='Optimized Model + Optimized GT (v2)')
+    plt.plot(epochs,gaussian_filter1d(history7.history['loss'], sigma=3),'brown',label='GRU + Optimized GT (v2+Separate)')
+    plt.plot(epochs,gaussian_filter1d(history8.history['loss'], sigma=3),'pink',label='GRU + Optimized GT (v3+Separate)')
     plt.title('Training Loss (1)')
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
@@ -86,6 +96,8 @@ def plot_lines():
     plt.plot(epochs,gaussian_filter1d(history4.history['val_loss'], sigma=3),'green',label='GRU + Optimized GT (v3)')
     plt.plot(epochs,gaussian_filter1d(history6.history['val_loss'], sigma=3),'purple',label='Optimized Model + GT')
     plt.plot(epochs,gaussian_filter1d(history5.history['val_loss'], sigma=3),'orange',label='Optimized Model + Optimized GT (v2)')
+    plt.plot(epochs,gaussian_filter1d(history7.history['val_loss'], sigma=3),'brown',label='GRU + Optimized GT (v2+Separate)')
+    plt.plot(epochs,gaussian_filter1d(history8.history['val_loss'], sigma=3),'pink',label='GRU + Optimized GT (v3+Separate)')
     plt.title('Test Loss (1)')
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
