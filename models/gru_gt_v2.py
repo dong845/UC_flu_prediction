@@ -71,9 +71,8 @@ def gru_with_trends2(df, df_trends, th, n_test, long_test=False, labels=None):
             self.layer1 = Dense(52, activation='relu')
             self.layer2 = Permute((2,1),input_shape=(159,52))
             self.layer3 = Dense(x_train.shape[2], activation='relu')
-            self.model = Sequential()
-            self.model.add(GRU(best_nodes, input_shape=(x_train.shape[1], x_train.shape[2]), dropout=0.3))
-            self.model.add(Dense(y_train.shape[1]))
+            self.model = GRU(best_nodes, input_shape=(x_train.shape[1], x_train.shape[2]), dropout=0.3)
+            self.model1 = Dense(y_train.shape[1])
         def call(self, inputs):
             input1, input2 = inputs
             x = self.layer1(input2)
@@ -81,12 +80,16 @@ def gru_with_trends2(df, df_trends, th, n_test, long_test=False, labels=None):
             y = layers.concatenate([input1, x], axis=2)
             y = self.layer3(y)
             y = self.model(y)
+            y = self.model1(y)
             return y
              
     # design network
-    best_nodes, best_epochs = 5, 100
+    best_nodes, best_epochs = 16, 500
     model = MyModel(best_nodes)
-    model.compile(loss='mse', optimizer=Adam(lr=0.001))
+    model.compile(loss='mse', optimizer=Adam(lr=7e-4))
+    # print("x_test:", x_test.shape)
+    # print("trends:", trends_test.shape)
+    # print("y_train:", y_train.shape)
     history = model.fit([x_train, trends_train], y_train, epochs=best_epochs, batch_size=32, validation_data=([x_test,trends_test], y_test), verbose=1, shuffle=False)
     labels = df.columns
     yhat_train_all = model.predict([x_train, trends_train])
@@ -101,4 +104,4 @@ def gru_with_trends2(df, df_trends, th, n_test, long_test=False, labels=None):
         y_test, yhat_test = denormalize(normalized_df.loc[dates_test], scaler, city, yhat_test_all[:, c])
         #preds[city] = ((dates_train, dates_test), (y_train, y_test), (yhat_train, yhat_test))
         preds[city] = ([str(x) for x in list(dates_test)], list(y_test.values), list(yhat_test.values))
-    return preds, coefs
+    return preds, coefs, history

@@ -99,9 +99,9 @@ def attn_with_trends_v0(df, df_trends, th, n_test, long_test=False, labels=None)
 
     # design network
 
-    best_nodes, best_epochs = 5, 1000
+    best_nodes, best_epochs = 16, 500
     model = Model_v1(best_nodes)
-    model.compile(loss='mse', optimizer=Adam(lr=0.001))
+    model.compile(loss='mse', optimizer=Adam(lr=7e-4))
     history = model.fit(x_train, y_train, epochs=best_epochs, batch_size=32,
                         validation_data=(x_test, y_test), verbose=1, shuffle=False)
     labels = df.columns
@@ -120,4 +120,4 @@ def attn_with_trends_v0(df, df_trends, th, n_test, long_test=False, labels=None)
         #preds[city] = ((dates_train, dates_test), (y_train, y_test), (yhat_train, yhat_test))
         preds[city] = ([str(x) for x in list(dates_test)],
                        list(y_test.values), list(yhat_test.values))
-    return preds, coefs
+    return preds, coefs, history

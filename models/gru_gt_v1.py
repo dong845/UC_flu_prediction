@@ -72,11 +72,11 @@ def gru_with_trends1(df, df_trends, th, n_test, long_test=False, labels=None):
     # design network
     def init_net(nodes):
         model = Sequential()
-        model.add(GRU(best_nodes, input_shape=(x_train.shape[1], x_train.shape[2]), dropout=0.3))
+        model.add(GRU(nodes, input_shape=(x_train.shape[1], x_train.shape[2]), dropout=0.3))
         model.add(Dense(y_train.shape[1]))
-        model.compile(loss='mse', optimizer=Adam(lr=0.001))
+        model.compile(loss='mse', optimizer=Adam(lr=7e-4))
         return model
-    best_nodes, best_epochs = 5, 100
+    best_nodes, best_epochs = 16, 500
     model = init_net(best_nodes)
     history = model.fit(x_train, y_train, epochs=best_epochs, batch_size=32, validation_data=(x_test, y_test), verbose=1, shuffle=False)
     labels = df.columns
@@ -92,4 +92,4 @@ def gru_with_trends1(df, df_trends, th, n_test, long_test=False, labels=None):
         y_test, yhat_test = denormalize(normalized_df.loc[dates_test], scaler, city, yhat_test_all[:, c])
         #preds[city] = ((dates_train, dates_test), (y_train, y_test), (yhat_train, yhat_test))
         preds[city] = ([str(x) for x in list(dates_test)], list(y_test.values), list(yhat_test.values))
-    return preds, coefs
+    return preds, coefs, history

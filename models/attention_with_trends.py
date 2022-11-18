@@ -15,7 +15,7 @@ import keras
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import mode
-from models import Model_v2
+from models import Model_v21
 
 from preprocessing import normalize, denormalize, to_supervised
 from utils import load_flu, load_dengue, load_flu_states, load_flu_cities_subset, remove_zeros
@@ -75,9 +75,9 @@ def att_with_trends(df, df_trends, th, n_test, long_test=False, labels=None):
         x_test, y_test, dates_test = x_test[0:1], y_test[0:1], dates_test[0:1]
 
     # design network
-    best_nodes, best_epochs = 5, 100
-    model = Model_v2(best_nodes)
-    model.compile(loss='mse', optimizer=Adam(lr=0.001))
+    best_nodes, best_epochs = 16, 500
+    model = Model_v21(best_nodes)
+    model.compile(loss='mse', optimizer=Adam(lr=7e-4))
     history = model.fit([x_train, trends_train], y_train, epochs=best_epochs, batch_size=32,
                         validation_data=([x_test, trends_test], y_test), verbose=1, shuffle=False)
     labels = df.columns
@@ -96,4 +96,4 @@ def att_with_trends(df, df_trends, th, n_test, long_test=False, labels=None):
         #preds[city] = ((dates_train, dates_test), (y_train, y_test), (yhat_train, yhat_test))
         preds[city] = ([str(x) for x in list(dates_test)],
                        list(y_test.values), list(yhat_test.values))
-    return preds, coefs
+    return preds, coefs, history

@@ -11,6 +11,7 @@ from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping
 from keras import layers
 import keras
+from keras.layers.core import Flatten
 # from vis.visualization import visualize_saliency, visualize_cam
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -29,7 +30,7 @@ def get_correlations(x_train, y_train):
     return correlations
 
 # LSTM model
-def gru_with_trends3(df, df_trends, th, n_test, long_test=False, labels=None):
+def gru_with_trends21(df, df_trends, th, n_test, long_test=False, labels=None):
     np.random.seed(0)
     normalized_df, scaler = normalize(df, n_test)
     x_train, y_train, x_test, y_test, dates_train, dates_test = to_supervised(normalized_df, df.columns, df.columns, range(52, 0, -1), [th-1], n_test)
@@ -68,25 +69,29 @@ def gru_with_trends3(df, df_trends, th, n_test, long_test=False, labels=None):
     class MyModel(keras.Model):
         def __init__(self,best_nodes):
             super(MyModel, self).__init__(name='my_model')
-            self.layer1 = Dense(52, activation='relu')
-            self.layer2 = Permute((2,1),input_shape=(159,52))
-            self.layer3 = Dense(x_train.shape[2], activation='relu')
-            self.model = Sequential()
-            self.model.add(GRU(best_nodes, input_shape=(x_train.shape[1], x_train.shape[2]), dropout=0.3))
-            self.model.add(Dense(y_train.shape[1]))
+            self.layer1 = Dense(64, activation='relu')
+            self.layer2 = Permute((2,1),input_shape=(52,159))
+            self.layer3 = Flatten()
+            self.model = GRU(best_nodes, input_shape=(159, 52), dropout=0.3)
+            self.model1 = Dense(y_train.shape[1])
         def call(self, inputs):
             input1, input2 = inputs
-            x = self.layer1(input2)
-            x = self.layer2(x)
-            y = 0.7*input1+0.3*x
-            y = self.layer3(y)
-            y = self.model(y)
-            return y
+            x1 = self.layer2(input1)
+            x1 = self.model(x1)
+            
+            x2 = self.layer3(input2)
+            x2 = self.layer1(x2)
+            x = layers.concatenate([x1, x2], axis=-1)
+            x = self.model1(x)
+            return x
              
     # design network
     best_nodes, best_epochs = 16, 500
     model = MyModel(best_nodes)
     model.compile(loss='mse', optimizer=Adam(lr=7e-4))
+    # print("x_test:", x_test.shape)
+    # print("trends:", trends_test.shape)
+    # print("y_train:", y_train.shape)
     history = model.fit([x_train, trends_train], y_train, epochs=best_epochs, batch_size=32, validation_data=([x_test,trends_test], y_test), verbose=1, shuffle=False)
     labels = df.columns
     yhat_train_all = model.predict([x_train, trends_train])
@@ -101,4 +106,4 @@ def gru_with_trends3(df, df_trends, th, n_test, long_test=False, labels=None):
         y_test, yhat_test = denormalize(normalized_df.loc[dates_test], scaler, city, yhat_test_all[:, c])
         #preds[city] = ((dates_train, dates_test), (y_train, y_test), (yhat_train, yhat_test))
         preds[city] = ([str(x) for x in list(dates_test)], list(y_test.values), list(yhat_test.values))
-    return preds, coefs, history
+    return preds, coefs
