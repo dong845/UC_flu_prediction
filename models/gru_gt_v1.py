@@ -28,6 +28,15 @@ def get_correlations(x_train, y_train):
             correlations[lag][c] = np.corrcoef(y_train, timeseries)[0][1]
     return correlations
 
+
+def scheduler(epoch):
+    lr = 3e-3
+    if epoch > 50 and epoch<=200:
+        lr = 1e-3
+    elif epoch > 200:
+        lr = 7e-4
+    return lr
+
 # LSTM model
 def gru_with_trends1(df, df_trends, th, n_test, long_test=False, labels=None):
     np.random.seed(0)
@@ -74,11 +83,12 @@ def gru_with_trends1(df, df_trends, th, n_test, long_test=False, labels=None):
         model = Sequential()
         model.add(GRU(nodes, input_shape=(x_train.shape[1], x_train.shape[2]), dropout=0.3))
         model.add(Dense(y_train.shape[1]))
-        model.compile(loss='mse', optimizer=Adam(lr=7e-4))
+        model.compile(loss='mse', optimizer=Adam(lr=3e-3))
         return model
     best_nodes, best_epochs = 16, 500
     model = init_net(best_nodes)
-    history = model.fit(x_train, y_train, epochs=best_epochs, batch_size=32, validation_data=(x_test, y_test), verbose=1, shuffle=False)
+    reduce_lr = keras.callbacks.LearningRateScheduler(scheduler)
+    history = model.fit(x_train, y_train, epochs=best_epochs, batch_size=32, validation_data=(x_test, y_test), verbose=1, shuffle=False, callbacks=[reduce_lr])
     labels = df.columns
     yhat_train_all = model.predict(x_train)
     yhat_test_all = model.predict(x_test)

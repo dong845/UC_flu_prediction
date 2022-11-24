@@ -13,6 +13,7 @@ from keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import mode
+import keras
 
 from preprocessing import normalize, denormalize, to_supervised
 from utils import load_flu, load_dengue, load_flu_states, load_flu_cities_subset, remove_zeros
@@ -25,6 +26,14 @@ def get_correlations(x_train, y_train):
             timeseries = x_train[:, lag, c]
             correlations[lag][c] = np.corrcoef(y_train, timeseries)[0][1]
     return correlations
+
+def scheduler(epoch):
+    lr = 3e-3
+    if epoch > 50 and epoch<=200:
+        lr = 1e-3
+    elif epoch > 200:
+        lr = 7e-4
+    return lr
 
 # LSTM model
 def lstm_with_trends(df, df_trends, th, n_test, long_test=False, labels=None):
@@ -94,7 +103,8 @@ def lstm_with_trends(df, df_trends, th, n_test, long_test=False, labels=None):
         return model
     best_nodes, best_epochs = 16, 500
     model = init_net(best_nodes)
-    history = model.fit(x_train, y_train, epochs=best_epochs, batch_size=32, validation_data=(x_test, y_test), verbose=1, shuffle=False)
+    reduce_lr = keras.callbacks.LearningRateScheduler(scheduler)
+    history = model.fit(x_train, y_train, epochs=best_epochs, batch_size=32, validation_data=(x_test, y_test), verbose=1, shuffle=False, callbacks=[reduce_lr])
     labels = df.columns
     yhat_train_all = model.predict(x_train)
     yhat_test_all = model.predict(x_test)

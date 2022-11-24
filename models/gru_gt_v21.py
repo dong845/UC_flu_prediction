@@ -29,6 +29,14 @@ def get_correlations(x_train, y_train):
             correlations[lag][c] = np.corrcoef(y_train, timeseries)[0][1]
     return correlations
 
+def scheduler(epoch):
+    lr = 3e-3
+    if epoch > 50 and epoch<=200:
+        lr = 1e-3
+    elif epoch > 200:
+        lr = 7e-4
+    return lr
+
 # LSTM model
 def gru_with_trends21(df, df_trends, th, n_test, long_test=False, labels=None):
     np.random.seed(0)
@@ -88,11 +96,12 @@ def gru_with_trends21(df, df_trends, th, n_test, long_test=False, labels=None):
     # design network
     best_nodes, best_epochs = 16, 500
     model = MyModel(best_nodes)
-    model.compile(loss='mse', optimizer=Adam(lr=7e-4))
+    model.compile(loss='mse', optimizer=Adam(lr=3e-3))
     # print("x_test:", x_test.shape)
     # print("trends:", trends_test.shape)
     # print("y_train:", y_train.shape)
-    history = model.fit([x_train, trends_train], y_train, epochs=best_epochs, batch_size=32, validation_data=([x_test,trends_test], y_test), verbose=1, shuffle=False)
+    reduce_lr = keras.callbacks.LearningRateScheduler(scheduler)
+    history = model.fit([x_train, trends_train], y_train, epochs=best_epochs, batch_size=32, validation_data=([x_test,trends_test], y_test), verbose=1, shuffle=False, callbacks=[reduce_lr])
     labels = df.columns
     yhat_train_all = model.predict([x_train, trends_train])
     yhat_test_all = model.predict([x_test, trends_test])
@@ -106,4 +115,4 @@ def gru_with_trends21(df, df_trends, th, n_test, long_test=False, labels=None):
         y_test, yhat_test = denormalize(normalized_df.loc[dates_test], scaler, city, yhat_test_all[:, c])
         #preds[city] = ((dates_train, dates_test), (y_train, y_test), (yhat_train, yhat_test))
         preds[city] = ([str(x) for x in list(dates_test)], list(y_test.values), list(yhat_test.values))
-    return preds, coefs
+    return preds, coefs, history
