@@ -53,13 +53,14 @@ TODO:
 - Poster
 
 #### Changes
-- GT
-  - gru_gt_v1.py: GT matrix and original feature matrix concatenate directly and put into GRU
-  - gru_gt_v2.py: GT matrix and original feature matrix go through fully connected layers respectively, and concatenate together
-  - gru_gt_v21.py: Original feature matrix goes through FC and GRU, while GT matrix goes through FC layers, then concatenate together
-  - gru_gt_v3.py: GT matrix goes through fully connected layers, then multiply with weight and add with weighted original feature matrix
-  - gru_gt_v31.py: Original feature matrix goes through FC and GRU, while GT matrix goes through FC layers, then multiply with different weights and add together
+- New Data Combination
+  - gru_gt_v1.py: GT matrix and original feature matrix concatenate directly and go through fully connected layers and GRU (Combine v1)
+  - gru_gt_v2.py: GT matrix and original feature matrix go through fully connected layers respectively, and concatenate together (Combine v2)
+  - gru_gt_v3.py: GT matrix and original feature matrix go through fully connected layers respectively, and weighted sum together (Combine v3)
 - Model Structure
-  - models.py: some changes to the structure by introdcing CNN1D layers (Attention layer would highly lower the performance)
-  - attention_origin_trends,py: original combination of GT and features with changed structure
-  - attention_with_trends.py: combine changed model structure with changed combination of GT and original feature
+  - models.py: some changes to the structure by introdcing CNN1D layers and models that contains both Conv1D layers and new data combination methods
+  - conv1_origin_trends.py: introduce Conv1D layers into the model structure.
+- Model Structure + New Data Combination
+  - conv1_with_trends_v1.py: Conv1D layers + Combine v1
+  - conv1_with_trends_v2.py: Conv1D layers + Combine v2
+  - conv1_with_trends_v3.py: Conv1D layers + Combine v3
