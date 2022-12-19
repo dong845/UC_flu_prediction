@@ -15,8 +15,13 @@ from lstm_with_trends import lstm_with_trends
 from gru_gt_v1 import gru_with_trends1
 from gru_gt_v2 import gru_with_trends2
 from gru_gt_v3 import gru_with_trends3
-from attention_with_trends import att_with_trends
-from attention_origin_trends import attn_with_trends_v0
+from gru_gt_v21 import gru_with_trends21
+from gru_gt_v31 import gru_with_trends31
+from conv1_with_trends_v1 import att_with_trends1
+from conv1_with_trends_v2 import att_with_trends2
+from conv1_with_trends_v3 import att_with_trends3
+from conv1_origin_trends import attn_with_trends_v0
+import matplotlib.pyplot as plt
 
 model_lookup = {
     # 'persistence':persistance,
@@ -31,8 +36,10 @@ model_lookup = {
     "nowcasting_gru_v1": gru_with_trends1,
     "nowcasting_gru_v2": gru_with_trends2,
     "nowcasting_gru_v3": gru_with_trends3,
-    "nowcasting_attn": att_with_trends,
-    "nowcasting_attn_origin": attn_with_trends_v0
+    "nowcasting_conv1_origin": attn_with_trends_v0,
+    "nowcasting_conv1_v1": att_with_trends1,
+    "nowcasting_conv1_v2": att_with_trends2,
+    "nowcasting_conv1_v3": att_with_trends3,
 }
 
 start = time.time()
@@ -40,7 +47,7 @@ start = time.time()
 geogran = 'city'  # Can be 'state' or 'city'
 th = 8  # Can be 1, 2, 4, or 8
 # Can be any of the keys in the model_lookup dictionary above
-model_name = 'nowcasting_attn_origin'
+model_name = 'nowcasting_conv1_v2'
 online_learning = False  # Can be True or False
 #output_fname = 'new_results_state/' + model_name + '_' + str(th) + '_____'
 output_fname = 'bla.json'

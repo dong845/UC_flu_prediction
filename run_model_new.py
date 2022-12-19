@@ -16,8 +16,10 @@ from gru_gt_v2 import gru_with_trends2
 from gru_gt_v3 import gru_with_trends3
 from gru_gt_v21 import gru_with_trends21
 from gru_gt_v31 import gru_with_trends31
-from attention_with_trends import att_with_trends
-from attention_origin_trends import attn_with_trends_v0
+from conv1_with_trends_v1 import att_with_trends1
+from conv1_with_trends_v2 import att_with_trends2
+from conv1_with_trends_v3 import att_with_trends3
+from conv1_origin_trends import attn_with_trends_v0
 import matplotlib.pyplot as plt
 
 model_lookup = {
@@ -32,11 +34,11 @@ model_lookup = {
     'nowcasting_lstm': lstm_with_trends,
     "nowcasting_gru_v1": gru_with_trends1,
     "nowcasting_gru_v2": gru_with_trends2,
-    "nowcasting_gru_v21": gru_with_trends21,
     "nowcasting_gru_v3": gru_with_trends3,
-    "nowcasting_gru_v31": gru_with_trends31,
-    "nowcasting_attn": att_with_trends,
-    "nowcasting_attn_origin": attn_with_trends_v0
+    "nowcasting_conv1_origin": attn_with_trends_v0,
+    "nowcasting_conv1_v1": att_with_trends1,
+    "nowcasting_conv1_v2": att_with_trends2,
+    "nowcasting_conv1_v3": att_with_trends3,
 }
 
 start = time.time()
@@ -58,47 +60,47 @@ model = model_lookup[model_name]
 n_test = int(sys.argv[1])
 
 def plot_lines():
-    model7 = model_lookup["nowcasting_gru_v21"]
-    _, _, history7 = model7(df, df_trends, th, n_test, True)
-    model8 = model_lookup["nowcasting_gru_v31"]
-    _, _, history8 = model8(df, df_trends, th, n_test, True)
     model3 = model_lookup["nowcasting_gru_v2"]
     _, _, history3 = model3(df, df_trends, th, n_test, True)
     model4 = model_lookup["nowcasting_gru_v3"]
     _, _, history4 = model4(df, df_trends, th, n_test, True)
-    model5 = model_lookup["nowcasting_attn"]
+    model5 = model_lookup["nowcasting_conv1_v1"]
     _, _, history5 = model5(df, df_trends, th, n_test, True)
-    model6 = model_lookup["nowcasting_attn_origin"]
+    model6 = model_lookup["nowcasting_conv1_origin"]
     _, _, history6 = model6(df, df_trends, th, n_test, True)
     model1 = model_lookup["nowcasting_lstm"]
     _, _, history1 = model1(df, df_trends, th, n_test, True)
     model2 = model_lookup["nowcasting_gru_v1"]
     _, _, history2 = model2(df, df_trends, th, n_test, True)
+    model7 = model_lookup["nowcasting_conv1_v2"]
+    _, _, history7 = model7(df, df_trends, th, n_test, True)
+    model8 = model_lookup["nowcasting_conv1_v3"]
+    _, _, history8 = model8(df, df_trends, th, n_test, True)
     
     epochs = list(range(1, 501))
-    plt.plot(epochs,gaussian_filter1d(history1.history['loss'], sigma=3),'blue',label='GRU + GT')
-    plt.plot(epochs,gaussian_filter1d(history2.history['loss'], sigma=3),'red',label='GRU + Optimized GT (v1)')
-    plt.plot(epochs,gaussian_filter1d(history3.history['loss'], sigma=3),'yellow',label='GRU + Optimized GT (v2)')
-    plt.plot(epochs,gaussian_filter1d(history4.history['loss'], sigma=3),'green',label='GRU + Optimized GT (v3)')
-    plt.plot(epochs,gaussian_filter1d(history6.history['loss'], sigma=3),'purple',label='Optimized Model + GT')
-    plt.plot(epochs,gaussian_filter1d(history5.history['loss'], sigma=3),'orange',label='Optimized Model + Optimized GT (v2)')
-    plt.plot(epochs,gaussian_filter1d(history7.history['loss'], sigma=3),'brown',label='GRU + Optimized GT (v2+Separate)')
-    plt.plot(epochs,gaussian_filter1d(history8.history['loss'], sigma=3),'pink',label='GRU + Optimized GT (v3+Separate)')
-    plt.title('Training Loss (1)')
+    plt.plot(epochs,gaussian_filter1d(history1.history['loss'], sigma=3),'blue',label='original')
+    plt.plot(epochs,gaussian_filter1d(history2.history['loss'], sigma=3),'red',label='combine_v1')
+    plt.plot(epochs,gaussian_filter1d(history3.history['loss'], sigma=3),'yellow',label='combine_v2')
+    plt.plot(epochs,gaussian_filter1d(history4.history['loss'], sigma=3),'green',label='combine_v3')
+    plt.plot(epochs,gaussian_filter1d(history6.history['loss'], sigma=3),'purple',label='original_Conv1D')
+    plt.plot(epochs,gaussian_filter1d(history5.history['loss'], sigma=3),'orange',label='combine_v1_Conv1D')
+    plt.plot(epochs,gaussian_filter1d(history7.history['loss'], sigma=3),'brown',label='combine_v2_Conv1D')
+    plt.plot(epochs,gaussian_filter1d(history8.history['loss'], sigma=3),'pink',label='combine_v3_Conv1D')
+    plt.title(f'Training Loss ({th} Week)')
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
     plt.show()
     
-    plt.plot(epochs,gaussian_filter1d(history1.history['val_loss'], sigma=3),'blue',label='GRU + GT')
-    plt.plot(epochs,gaussian_filter1d(history2.history['val_loss'], sigma=3),'red',label='GRU + Optimized GT (v1)')
-    plt.plot(epochs,gaussian_filter1d(history3.history['val_loss'], sigma=3),'yellow',label='GRU + Optimized GT (v2)')
-    plt.plot(epochs,gaussian_filter1d(history4.history['val_loss'], sigma=3),'green',label='GRU + Optimized GT (v3)')
-    plt.plot(epochs,gaussian_filter1d(history6.history['val_loss'], sigma=3),'purple',label='Optimized Model + GT')
-    plt.plot(epochs,gaussian_filter1d(history5.history['val_loss'], sigma=3),'orange',label='Optimized Model + Optimized GT (v2)')
-    plt.plot(epochs,gaussian_filter1d(history7.history['val_loss'], sigma=3),'brown',label='GRU + Optimized GT (v2+Separate)')
-    plt.plot(epochs,gaussian_filter1d(history8.history['val_loss'], sigma=3),'pink',label='GRU + Optimized GT (v3+Separate)')
-    plt.title('Test Loss (1)')
+    plt.plot(epochs,gaussian_filter1d(history1.history['val_loss'], sigma=3),'blue',label='original')
+    plt.plot(epochs,gaussian_filter1d(history2.history['val_loss'], sigma=3),'red',label='combine_v1')
+    plt.plot(epochs,gaussian_filter1d(history3.history['val_loss'], sigma=3),'yellow',label='combine_v2')
+    plt.plot(epochs,gaussian_filter1d(history4.history['val_loss'], sigma=3),'green',label='combine_v3')
+    plt.plot(epochs,gaussian_filter1d(history6.history['val_loss'], sigma=3),'purple',label='original_Conv1D')
+    plt.plot(epochs,gaussian_filter1d(history5.history['val_loss'], sigma=3),'orange',label='combine_v1_Conv1D')
+    plt.plot(epochs,gaussian_filter1d(history7.history['val_loss'], sigma=3),'brown',label='combine_v2_Conv1D')
+    plt.plot(epochs,gaussian_filter1d(history8.history['val_loss'], sigma=3),'pink',label='combine_v3_Conv1D')
+    plt.title(f'Test Loss ({th} Week)')
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
