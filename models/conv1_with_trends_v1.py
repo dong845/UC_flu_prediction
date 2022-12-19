@@ -15,6 +15,7 @@ import keras
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import mode
+from models import Model_v11
 
 from preprocessing import normalize, denormalize, to_supervised
 from utils import load_flu, load_dengue, load_flu_states, load_flu_cities_subset, remove_zeros
@@ -28,6 +29,7 @@ def get_correlations(x_train, y_train):
             correlations[lag][c] = np.corrcoef(y_train, timeseries)[0][1]
     return correlations
 
+
 def scheduler(epoch):
     lr = 3e-3
     if epoch > 50 and epoch<=200:
@@ -37,7 +39,7 @@ def scheduler(epoch):
     return lr
 
 # LSTM model
-def gru_with_trends3(df, df_trends, th, n_test, long_test=False, labels=None):
+def att_with_trends1(df, df_trends, th, n_test, long_test=False, labels=None):
     np.random.seed(0)
     normalized_df, scaler = normalize(df, n_test)
     x_train, y_train, x_test, y_test, dates_train, dates_test = to_supervised(normalized_df, df.columns, df.columns, range(52, 0, -1), [th-1], n_test)
@@ -50,7 +52,6 @@ def gru_with_trends3(df, df_trends, th, n_test, long_test=False, labels=None):
         correlations = {}
         trends_city = remove_zeros(df_trends[city], n_test)
         normalized_trends_city, _ = normalize(trends_city, n_test)
-        # print("normalized_trends_city:", normalized_trends_city)
         _, trends_train, _, trends_test, _, _ = to_supervised(normalized_trends_city, normalized_trends_city.columns[:1], normalized_trends_city.columns, range(52, 0, -1), [th-1], n_test)
         for t in range(trends_train.shape[2]):
             corr = np.corrcoef(trends_train[:, :, t].flatten(), y_train[:, :, c].flatten())[0][1]
@@ -62,48 +63,32 @@ def gru_with_trends3(df, df_trends, th, n_test, long_test=False, labels=None):
         trends_train_full.append(trends_train)
         trends_test_full.append(trends_test)
     trends_train = np.concatenate(trends_train_full, axis=1)
+    trends_train = trends_train.transpose(0,2,1)
     trends_test = np.concatenate(trends_test_full, axis=1)
+    trends_test = trends_test.transpose(0,2,1)
+    
+    # trends_train: 159, 8
+    
+    x_train = np.concatenate((x_train, trends_train), axis=1)
+    x_test = np.concatenate((x_test, trends_test), axis=1)
     print('TOGETHER DATA SHAPE', x_train.shape)
 
     y_train = y_train.reshape(y_train.shape[0]*y_train.shape[1], y_train.shape[2]) 
     y_test = y_test.reshape(y_test.shape[0]*y_test.shape[1], y_test.shape[2])
-    print(y_train.shape)  # (271, 159)
+    print(y_train.shape)
     print(y_train[0])
 
     if not long_test:
         x_test, y_test, dates_test = x_test[0:1], y_test[0:1], dates_test[0:1]
-
-    class MyModel(keras.Model):
-        def __init__(self,best_nodes):
-            super(MyModel, self).__init__(name='my_model')
-            self.layer1 = Dense(159, activation='relu')
-            self.layer2 = Dense(52, activation='relu')
-            self.layer3 = Permute((2,1),input_shape=(159,52))
-            self.layer4 = Dense(x_train.shape[2], activation='relu')
-            self.model = Sequential()
-            self.model.add(GRU(best_nodes, input_shape=(x_train.shape[1], x_train.shape[2]), dropout=0.3))
-            self.model.add(Dense(64, activation='relu'))
-            # self.model.add(Dense(64, activation='relu'))
-            self.model.add(Dense(y_train.shape[1]))
-        def call(self, inputs):
-            input1, input2 = inputs
-            x = self.layer1(input1)
-            
-            x1 = self.layer2(input2)
-            x1 = self.layer3(x1)
-            y = 0.8*x+0.2*x1
-            y = self.layer4(y)
-            y = self.model(y)
-            return y
-             
+        
     # design network
     best_nodes, best_epochs = 16, 500
-    model = MyModel(best_nodes)
+    model = Model_v11(best_nodes)
     model.compile(loss='mse', optimizer=Adam(lr=1e-4))
-    history = model.fit([x_train, trends_train], y_train, epochs=best_epochs, batch_size=32, validation_data=([x_test,trends_test], y_test), verbose=1, shuffle=False)
+    history = model.fit(x_train, y_train, epochs=best_epochs, batch_size=32, validation_data=(x_test, y_test), verbose=1, shuffle=False)
     labels = df.columns
-    yhat_train_all = model.predict([x_train, trends_train])
-    yhat_test_all = model.predict([x_test, trends_test])
+    yhat_train_all = model.predict(x_train)
+    yhat_test_all = model.predict(x_test)
     coefs = {city:{} for city in df.columns}
 
     preds = {}

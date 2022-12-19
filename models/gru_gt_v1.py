@@ -66,6 +66,8 @@ def gru_with_trends1(df, df_trends, th, n_test, long_test=False, labels=None):
     trends_test = np.concatenate(trends_test_full, axis=1)
     trends_test = trends_test.transpose(0,2,1)
     
+    # trends_train: 159, 8
+    
     x_train = np.concatenate((x_train, trends_train), axis=1)
     x_test = np.concatenate((x_test, trends_test), axis=1)
     print('TOGETHER DATA SHAPE', x_train.shape)
@@ -81,14 +83,16 @@ def gru_with_trends1(df, df_trends, th, n_test, long_test=False, labels=None):
     # design network
     def init_net(nodes):
         model = Sequential()
+        model.add(Dense(x_train.shape[2], activation='relu'))
         model.add(GRU(nodes, input_shape=(x_train.shape[1], x_train.shape[2]), dropout=0.3))
+        # model.add(Dense(64, activation='relu'))
+        model.add(Dense(64, activation='relu'))
         model.add(Dense(y_train.shape[1]))
-        model.compile(loss='mse', optimizer=Adam(lr=3e-3))
+        model.compile(loss='mse', optimizer=Adam(lr=1e-4))
         return model
     best_nodes, best_epochs = 16, 500
     model = init_net(best_nodes)
-    reduce_lr = keras.callbacks.LearningRateScheduler(scheduler)
-    history = model.fit(x_train, y_train, epochs=best_epochs, batch_size=32, validation_data=(x_test, y_test), verbose=1, shuffle=False, callbacks=[reduce_lr])
+    history = model.fit(x_train, y_train, epochs=best_epochs, batch_size=32, validation_data=(x_test, y_test), verbose=1, shuffle=False)
     labels = df.columns
     yhat_train_all = model.predict(x_train)
     yhat_test_all = model.predict(x_test)

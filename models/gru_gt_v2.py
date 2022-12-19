@@ -63,7 +63,9 @@ def gru_with_trends2(df, df_trends, th, n_test, long_test=False, labels=None):
         trends_train_full.append(trends_train)
         trends_test_full.append(trends_test)
     trends_train = np.concatenate(trends_train_full, axis=1)
+    trends_train = trends_train.transpose(0,2,1)
     trends_test = np.concatenate(trends_test_full, axis=1)
+    trends_test = trends_test.transpose(0,2,1)
     print('TOGETHER DATA SHAPE', x_train.shape)
 
     y_train = y_train.reshape(y_train.shape[0]*y_train.shape[1], y_train.shape[2]) 
@@ -77,27 +79,32 @@ def gru_with_trends2(df, df_trends, th, n_test, long_test=False, labels=None):
     class MyModel(keras.Model):
         def __init__(self,best_nodes):
             super(MyModel, self).__init__(name='my_model')
-            self.layer1 = Dense(52, activation='relu')
-            self.layer2 = Permute((2,1),input_shape=(159,52))
-            self.layer3 = Dense(x_train.shape[2], activation='relu')
-            self.model = GRU(best_nodes, input_shape=(x_train.shape[1], x_train.shape[2]), dropout=0.3)
-            self.model1 = Dense(y_train.shape[1])
+            self.layer1 = Dense(159, activation='relu')
+            self.layer2 = Dense(52, activation='relu')
+            self.layer3 = Permute((2, 1), input_shape=(8, 52))
+            self.layer4 = Dense(x_train.shape[2], activation='relu')
+            self.model = GRU(best_nodes, input_shape=(52, x_train.shape[2]), dropout=0.3)
+            self.model1 = Dense(64, activation='relu')
+            # self.model2 = Dense(64, activation='relu')
+            self.model3 = Dense(y_train.shape[1])
         def call(self, inputs):
             input1, input2 = inputs
-            x = self.layer1(input2)
-            x = self.layer2(x)
-            y = layers.concatenate([input1, x], axis=2)
-            y = self.layer3(y)
+            x = self.layer1(input1)
+            x1 = self.layer2(input2)
+            x1 = self.layer3(x1)
+            y = layers.concatenate([x, x1], axis=-1)
+            y = self.layer4(y)
             y = self.model(y)
             y = self.model1(y)
+            # y = self.model2(y)
+            y = self.model3(y)
             return y
              
     # design network
     best_nodes, best_epochs = 16, 500
     model = MyModel(best_nodes)
-    model.compile(loss='mse', optimizer=Adam(lr=3e-3))
-    reduce_lr = keras.callbacks.LearningRateScheduler(scheduler)
-    history = model.fit([x_train, trends_train], y_train, epochs=best_epochs, batch_size=32, validation_data=([x_test,trends_test], y_test), verbose=1, shuffle=False, callbacks=[reduce_lr])
+    model.compile(loss='mse', optimizer=Adam(lr=1e-4))
+    history = model.fit([x_train, trends_train], y_train, epochs=best_epochs, batch_size=32, validation_data=([x_test,trends_test], y_test), verbose=1, shuffle=False)
     labels = df.columns
     yhat_train_all = model.predict([x_train, trends_train])
     yhat_test_all = model.predict([x_test, trends_test])
