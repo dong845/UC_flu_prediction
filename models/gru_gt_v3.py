@@ -91,7 +91,7 @@ def gru_with_trends3(df, df_trends, th, n_test, long_test=False, labels=None):
             
             x1 = self.layer2(input2)
             x1 = self.layer3(x1)
-            y = 0.8*x+0.2*x1
+            y = 0.7*x+0.3*x1
             y = self.layer4(y)
             y = self.model(y)
             return y
